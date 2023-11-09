@@ -4,10 +4,12 @@ from pandas import DataFrame
 import json
 import copy
 import string
+import copy
+import csv
 
 
-def loadData()->DataFrame:
-    books=pd.read_csv(DATA_FIE_PATH+DATA_FILE_NAME,sep=',')
+def loadData(type)->DataFrame:
+    books=pd.read_json(DATA_FIE_PATH+DATA_FILE_NAME+type+'.json')
     return books
 
 
@@ -47,7 +49,10 @@ def cleanData()->DataFrame:
     books=books.dropna()
     #print(books)
 
-    books.to_csv(DATA_FIE_PATH+DATA_FILE_NAME,index=False)
+    vocabulary=getVocabulary(books)
+    books['summary']=books['summary'].map(lambda sum,v=vocabulary:countWords(sum,v))
+
+    books.to_json(DATA_FIE_PATH+DATA_FILE_NAME+'.json')
     return books
 
 
@@ -58,10 +63,20 @@ def unifySummary(bookSummary):
             summary+=c.lower()
         elif c in string.whitespace and summary!='' and summary[-1]!=' ':
             summary+=' '
-    return summary.split() if len(summary)>=SUMMARY_MIN_LENGTH else None
+    summary=summary.split()
+    return summary if len(summary)>=SUMMARY_MIN_LENGTH else None
 
 
+def getVocabulary(books):
+    vocabulary={}
+    for summary in books['summary']:
+        for word in summary:
+            vocabulary[word]=0
+    return vocabulary
 
 
-
-
+def countWords(bookSummary,vocabulary):
+    vocabulary=copy.deepcopy(vocabulary)
+    for word in bookSummary:
+        vocabulary[word]+=1
+    return list(vocabulary.values())
