@@ -1,16 +1,12 @@
-import pandas as pd
-from constants import *
-import dataPreparation as dp
-import seaborn  as sns
-import matplotlib.pyplot as plt
-import naiveBayes as nb
 import svm
+import naiveBayes as nb
+import dataPreparation as dp
 
 
 if __name__ == "__main__":
-    #books=dp.cleanData()
-    books=dp.loadData('')
-    #books.info()
-    #print(books)
+    books = dp.cleanData(saveFileSuffix='')
+    # books = dp.loadData('')
+    books.info()
+    print('\n', books, '\n')
     nb.clasify(books)
     svm.clasify(books)
