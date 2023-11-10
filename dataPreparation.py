@@ -28,6 +28,7 @@ def cleanData(saveFileSuffix=None) -> DataFrame:
         lambda genres: genres[0] if len(genres) == 1 else None)
     books = books.dropna()
     books.columns = ('genre', 'summary')
+    books['genre'] = books['genre'].map(SELECTED_GENRES.index)
 
     # print(countElements(books['genre']))
     # books.info()
