@@ -5,8 +5,7 @@ from constants import *
 
 
 def clasify(data):
-    labels = data['genre']
-    features = list(data['summary'])
+    labels, features = data
 
     featuresTrain, featuresTest, labelsTrain, labelsTest = train_test_split(
         features, labels, test_size=TEST_SPLIT, random_state=RANDOM_STATE)
