@@ -11,10 +11,8 @@ from constants import *
 from dataPreparation import *
 
 
-def clasify(booksData):
+def clasify(genres, summaries, wordIndex):
     print('\navailable GPU:', tf.config.list_physical_devices('GPU'))
-
-    genres, summaries, wordIndex = booksData
 
     vocabularySize = max(wordIndex.values())+1
     print('vocabulary size = ', vocabularySize)

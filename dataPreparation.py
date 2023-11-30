@@ -9,11 +9,11 @@ import string
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from copy import deepcopy
 from itertools import chain
 from keras.utils import pad_sequences
 
 from constants import *
+from support import *
 
 
 def loadData(dataType=''):
@@ -110,42 +110,19 @@ def cleanSummaries(summaries, log=False):
     return summaries
 
 
-def calcPrevalance(summary, vocabulary):
-    vocabulary = deepcopy(vocabulary)
+def getWordIndex(summaries):    # TODO [DROP_TOP:KEEP_BOTTOM]
+    wordIndex = {word: 0 for word in chain.from_iterable(summaries)}
+    wordIndex = dict(zip(wordIndex.keys(), range(1, len(wordIndex)+1)))
+    return wordIndex
+
+
+def calcPrevalance(summary, wordIndex):
+    mappedSummary = np.zeros((len(wordIndex)))
     for word in summary:
-        vocabulary[word] += 1
-    return list(map(lambda wc: wc/len(summary), vocabulary.values()))
-
-
-def convertDataSL(genres, summaries):
-    vocabulary = {word: 0 for word in chain.from_iterable(summaries)}
-    summaries = list(
-        map(lambda summary: calcPrevalance(summary, vocabulary), summaries))
-    return (genres, summaries)
-
-
-def mapSummaries(summaries):
-    words = chain.from_iterable(summaries)
-    wordCount = countElements(words)
-    wordIndex = dict(zip(map(lambda wc: wc[1], wordCount[0:KEEP_BOTTOM]),
-                         range(1, len(wordCount)+1)))  # [DROP_TOP:KEEP_BOTTOM]   #VERY VERY slow?
-    indexedSummaries = list(
-        map(lambda s: list(map(lambda w: wordIndex[w] if w in wordIndex else 0, s)), summaries))
-    return (indexedSummaries, wordIndex)
-
-
-def convertDataDL(genres, summaries):
-    genres = np.array(list(map(GENRE_INDEX.get, genres)))
-
-    (summaries, wordIndex) = mapSummaries(summaries)
-    summaries = pad_sequences(summaries, padding='post', dtype=int, value=0)
-
-    shuffeledIndexes = tf.random.shuffle(
-        tf.range(start=0, limit=summaries.shape[0], dtype=tf.int32))
-    summaries = tf.gather(summaries, shuffeledIndexes).numpy()
-    genres = tf.gather(genres, shuffeledIndexes).numpy()
-
-    return (genres, summaries, wordIndex)
+        if word in wordIndex:
+            mappedSummary[wordIndex[word]-1] += 1
+    mappedSummary /= len(summary)
+    return mappedSummary
 
 
 def saveData(saveFileSuffix, booksData):
@@ -159,10 +136,29 @@ def cleanData(saveFileSuffix=None):
     genres = genres[0:1000]  # TODO
     summaries = summaries[0:1000]
     summaries = cleanSummaries(summaries, log=True)
+    wordIndex = getWordIndex(summaries)
+
+    shuffeledIndexes = tf.random.shuffle(
+        tf.range(start=0, limit=len(genres), dtype=tf.int32))
+
+    genres = np.array(list(map(GENRE_INDEX.get, genres)))
+    genres = tf.gather(genres, shuffeledIndexes).numpy()
+
+    summariesWP = np.array(list(map(
+        lambda summary: calcPrevalance(summary, wordIndex), summaries)))
+    summariesWP = tf.gather(summariesWP, shuffeledIndexes).numpy()
+
+    summariesIndexed = list(map(lambda summary: list(map(
+        lambda word: wordIndex[word] if word in wordIndex else 0, summary)), summaries))
+    summariesIndexed = pad_sequences(
+        summariesIndexed, padding='post', dtype=int, value=0)
+    summariesIndexed = tf.gather(summariesIndexed, shuffeledIndexes).numpy()
 
     booksData = {
-        'SL': convertDataSL(genres, summaries),
-        'DL': convertDataDL(genres, summaries)
+        'genres': genres,
+        'summaries': summariesIndexed,
+        'summariesWP': summariesWP,  # WordPrevalances
+        'wordIndex': wordIndex
     }
 
     if saveFileSuffix is not None:

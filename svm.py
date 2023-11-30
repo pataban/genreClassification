@@ -5,8 +5,7 @@ from sklearn.metrics import accuracy_score
 from constants import *
 
 
-def clasify(data):
-    labels, features = data
+def clasify(labels, features):
 
     featuresTrain, featuresTest, labelsTrain, labelsTest = train_test_split(
         features, labels, test_size=TEST_SPLIT, random_state=RANDOM_STATE)
