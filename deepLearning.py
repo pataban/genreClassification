@@ -11,12 +11,17 @@ from constants import *
 from dataPreparation import *
 
 
-def clasify(genres, summaries, wordIndex):
-    print('\navailable GPU:', tf.config.list_physical_devices('GPU'))
+def clasify(genres, summaries, wordIndex, verbose):
+    print('\n--------------------------------------------------------------------------')
+    print('LSTM')
+    print('--------------------------------------------------------------------------')
+
+    print('available GPU:', tf.config.list_physical_devices('GPU'))
 
     vocabularySize = max(wordIndex.values())+1
-    print('vocabulary size = ', vocabularySize)
-    print('summaries.shape =', summaries.shape)
+    if 0 < verbose < 3:
+        print('vocabulary size = ', vocabularySize)
+        print('summaries.shape =', summaries.shape)
 
     xTrain, XTest, yTrain, yTest = train_test_split(
         summaries, genres, test_size=0.1, random_state=1)
@@ -29,14 +34,18 @@ def clasify(genres, summaries, wordIndex):
 
     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy',
                   metrics="sparse_categorical_accuracy")
-    model.summary()
+    if 0 < verbose < 3:
+        model.summary()
 
-    print("\ntraining model")
-    model.fit(xTrain, yTrain, epochs=30, validation_split=0.1, verbose=1, batch_size=128,
+    if verbose > 0:
+        print("training")
+    model.fit(xTrain, yTrain, epochs=30, validation_split=0.1, verbose=verbose, batch_size=128,
               callbacks=keras.callbacks.EarlyStopping(monitor='val_sparse_categorical_accuracy',
                                                       patience=3, restore_best_weights=True))
+    if 0 < verbose < 4:
+        print('')
 
-    print("\nevaluating model")
-    res = model.evaluate(XTest, yTest, verbose=1, batch_size=16)
+    print("evaluating")
+    res = model.evaluate(XTest, yTest, verbose=verbose, batch_size=16)
     print(model.metrics_names[0], res[0])
-    print(model.metrics_names[1], res[1], '\n')
+    print(model.metrics_names[1], res[1])

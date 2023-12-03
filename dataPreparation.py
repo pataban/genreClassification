@@ -20,7 +20,7 @@ def loadData(dataType=''):
     return pd.read_json(DATA_FIE_PATH + DATA_FILE_NAME + dataType + '.json')
 
 
-def loadRawData():
+def loadRawData(verbose=False):
     books = pd.read_csv(DATA_FIE_PATH + RAW_DATA_FILE_NAME +
                         RAW_DATA_FILE_EXTENSION, sep='\t')
     books.columns = ('wId', 'fId', 'title',
@@ -31,6 +31,11 @@ def loadRawData():
 
     books['genres'] = books['genres'].map(
         lambda genres: list(json.loads(genres).values()))
+
+    if verbose > 1:
+        print('raw data:\n', books)
+        print('\nraw data info:')
+        books.info()
     return books
 
 
@@ -60,26 +65,26 @@ def select(books, selection=None, unique=False):
     summaries = []
     for (genre, summary) in zip(books['genres'], books['summary']):
         if (((not unique) or (len(genre) == 1)) and
-            ((selection is None) or (len(set(genre).intersection(selection)) > 0))):
+                ((selection is None) or (len(set(genre).intersection(selection)) > 0))):
             genres.append(genre[0]if unique else list(
                 set(genre).intersection(selection)))
             summaries.append(summary)
     return {'genres': genres, 'summary': summaries}
 
 
-def selectData(books, log=False):
-    if log:
-        print('\nfullGenreCount:', countElements(books['genres'].sum(), 10))
+def selectData(books, verbose=False):
+    if verbose > 1:
+        print('\nfullGenreCount:\n', countElements(books['genres'].sum(), 10))
 
     books = select(books, selection=GENRE_INDEX.keys())
-    if log:
-        print('\nselectedGenreCount: All =', len(
-            books['genres']), countElements(chain.from_iterable(books['genres'])))
+    if verbose > 1:
+        print('\nselectedGenreCount: All =', len(books['genres']), '\n',
+              countElements(chain.from_iterable(books['genres'])))
 
     books = select(books, unique=True)
-    if log:
-        print('\nuniqueGenreCount: All =', len(
-            books['genres']), countElements(books['genres']))
+    if verbose > 1:
+        print('\nuniqueGenreCount: All =', len(books['genres']), '\n',
+              countElements(books['genres']))
         print('\ncharacters:')
         printLen(books['summary'])
 
@@ -97,22 +102,24 @@ def cleanSummaryManual(summary):
     return cSummary
 
 
-def cleanSummaries(summaries, log=False):
+def cleanSummaries(summaries, verbose=False):
     if CLEAN_SUMMARY_MANUAL:
         summaries = list(map(lambda s: cleanSummaryManual(s)
                          [0:SUMMARY_LENGTH_MAX], summaries))
     else:
         summaries = list(map(lambda s: nltk.word_tokenize(s)
                          [0:SUMMARY_LENGTH_MAX], summaries))
-    if log:
+    if verbose > 1:
         print('\nwords:')
         printLen(summaries)
     return summaries
 
 
-def getWordIndex(summaries):    # TODO [DROP_TOP:KEEP_BOTTOM]
+def getWordIndex(summaries, verbose=False):    # TODO [DROP_TOP:KEEP_BOTTOM]
     wordIndex = {word: 0 for word in chain.from_iterable(summaries)}
     wordIndex = dict(zip(wordIndex.keys(), range(1, len(wordIndex)+1)))
+    if verbose > 1:
+        print('\nwordIndex:\n', wordIndex)
     return wordIndex
 
 
@@ -130,29 +137,40 @@ def saveData(saveFileSuffix, booksData):
     pass
 
 
-def cleanData(saveFileSuffix=None):
-    books = loadRawData()
-    genres, summaries = selectData(books, log=True)
+def cleanData(saveFileSuffix=None, verbose=0):
+    if verbose > 0:
+        print('--------------------------------------------------------------------------')
+        print("CleanData")
+        print('--------------------------------------------------------------------------')
+
+    books = loadRawData(verbose)
+    genres, summaries = selectData(books, verbose=verbose)
     genres = genres[0:1000]  # TODO
     summaries = summaries[0:1000]
-    summaries = cleanSummaries(summaries, log=True)
-    wordIndex = getWordIndex(summaries)
+    summaries = cleanSummaries(summaries, verbose=verbose)
+    wordIndex = getWordIndex(summaries, verbose)
 
     shuffeledIndexes = tf.random.shuffle(
         tf.range(start=0, limit=len(genres), dtype=tf.int32))
 
     genres = np.array(list(map(GENRE_INDEX.get, genres)))
     genres = tf.gather(genres, shuffeledIndexes).numpy()
+    if verbose > 1:
+        print('\nfinal genres:\n', genres)
 
     summariesWP = np.array(list(map(
         lambda summary: calcPrevalance(summary, wordIndex), summaries)))
     summariesWP = tf.gather(summariesWP, shuffeledIndexes).numpy()
+    if verbose > 1:
+        print('\nfinal summariesWP:\n', summariesWP)
 
     summariesIndexed = list(map(lambda summary: list(map(
         lambda word: wordIndex[word] if word in wordIndex else 0, summary)), summaries))
     summariesIndexed = pad_sequences(
         summariesIndexed, padding='post', dtype=int, value=0)
     summariesIndexed = tf.gather(summariesIndexed, shuffeledIndexes).numpy()
+    if verbose > 1:
+        print('\nfinal summariesIndexed:\n', summariesIndexed)
 
     booksData = {
         'genres': genres,

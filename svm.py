@@ -5,7 +5,10 @@ from sklearn.metrics import accuracy_score
 from constants import *
 
 
-def clasify(labels, features):
+def clasify(labels, features, verbose):
+    print('\n--------------------------------------------------------------------------')
+    print('SVM')
+    print('--------------------------------------------------------------------------')
 
     featuresTrain, featuresTest, labelsTrain, labelsTest = train_test_split(
         features, labels, test_size=TEST_SPLIT, random_state=RANDOM_STATE)
@@ -17,10 +20,12 @@ def clasify(labels, features):
     svm = SVC(C=1.0, coef0=0.0, decision_function_shape='ovr',
               degree=5, kernel='sigmoid', tol=0.0001)
 
-    print('training SVM')
+    if verbose>0:
+        print('training')
     svm.fit(featuresTrain, labelsTrain)
 
     predictedLabels = svm.predict(featuresTest)
-    print('predictedLabels:\n', predictedLabels)
+    if verbose>1:
+        print('predictedLabels:\n', predictedLabels)
 
-    print('accuracy: %2f\n' % (accuracy_score(labelsTest, predictedLabels)))
+    print('accuracy: %2f' % (accuracy_score(labelsTest, predictedLabels)))

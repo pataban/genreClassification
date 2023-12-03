@@ -7,22 +7,22 @@ from support import *
 
 if __name__ == "__main__":
     start('dataLoad')
-    booksData = dp.cleanData(saveFileSuffix='')
+    booksData = dp.cleanData(saveFileSuffix='', verbose=1)
     stop('dataLoad')
     # booksData = dp.loadData('')
     # print('\n', booksData, '\n')
 
     start('naiveBayes')
-    nb.clasify(booksData['genres'], booksData['summariesWP'])
+    nb.clasify(booksData['genres'], booksData['summariesWP'], verbose=1)
     stop('naiveBayes')
 
     start('SVM')
-    svm.clasify(booksData['genres'], booksData['summariesWP'])
+    svm.clasify(booksData['genres'], booksData['summariesWP'], verbose=1)
     stop('SVM')
 
     start('LSTM')
-    dl.clasify(booksData['genres'], booksData['summaries'],
-               booksData['wordIndex'])
+    dl.clasify(booksData['genres'], booksData['summaries'],  booksData['wordIndex'], verbose=3)
     stop('LSTM')
 
+    print('\n--------------------------------------------------------------------------')
     prtTimes()
