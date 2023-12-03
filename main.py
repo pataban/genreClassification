@@ -29,8 +29,12 @@ if __name__ == "__main__":
     stop('SVM')
 
     start('LSTM')
-    dl.classify(booksData['genres'], booksData['summaries'], booksData['wordIndex'], verbose=3)
+    dl.classifyLSTM(booksData['genres'], booksData['summaries'], booksData['wordIndex'], verbose=3)
     stop('LSTM')
+
+    start('MLP')
+    dl.classifyMLP(booksData['genres'], booksData['summariesWP'], booksData['wordIndex'], verbose=3)
+    stop('MLP')
 
     print('\n--------------------------------------------------------------------------')
     prtTimes()

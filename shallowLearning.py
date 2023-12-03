@@ -11,7 +11,7 @@ def buildNB():
 
 def buildSVM():
     return SVC(C=1.0, coef0=0.0, decision_function_shape='ovr',
-               kernel='sigmoid', tol=0.001, cache_size=4000)
+               kernel='sigmoid', tol=0.0001, cache_size=4000)
 
 
 def classify(modelName, yData, xData, verbose):

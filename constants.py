@@ -1,7 +1,7 @@
 from bidict import bidict
 
 
-DATA_FIE_PATH = 'data\\'
+DATA_FIE_PATH = 'data/'
 RAW_DATA_FILE_NAME = 'bookSummaries'
 RAW_DATA_FILE_EXTENSION = '.txt'
 DATA_FILE_NAME = 'bookSummaries'
