@@ -11,6 +11,7 @@ import pandas as pd
 import tensorflow as tf
 from itertools import chain
 from keras.utils import pad_sequences
+from sklearn.preprocessing import StandardScaler
 
 from constants import *
 from support import *
@@ -145,8 +146,8 @@ def cleanData(saveFileSuffix=None, verbose=0):
 
     books = loadRawData(verbose)
     genres, summaries = selectData(books, verbose=verbose)
-    genres = genres[0:1000]  # TODO
-    summaries = summaries[0:1000]
+    genres = genres[:TRAIN_SIZE+TEST_SIZE]
+    summaries = summaries[:TRAIN_SIZE+TEST_SIZE]
     summaries = cleanSummaries(summaries, verbose=verbose)
     wordIndex = getWordIndex(summaries, verbose)
 
@@ -160,6 +161,8 @@ def cleanData(saveFileSuffix=None, verbose=0):
 
     summariesWP = np.array(list(map(
         lambda summary: calcPrevalance(summary, wordIndex), summaries)))
+    scaler = StandardScaler().fit(summariesWP)
+    summariesWP = scaler.transform(summariesWP)
     summariesWP = tf.gather(summariesWP, shuffeledIndexes).numpy()
     if verbose > 1:
         print('\nfinal summariesWP:\n', summariesWP)
@@ -173,9 +176,12 @@ def cleanData(saveFileSuffix=None, verbose=0):
         print('\nfinal summariesIndexed:\n', summariesIndexed)
 
     booksData = {
-        'genres': genres,
-        'summaries': summariesIndexed,
-        'summariesWP': summariesWP,  # WordPrevalances
+        'genres': (genres[:TRAIN_SIZE],
+                   genres[TRAIN_SIZE:TRAIN_SIZE+TEST_SIZE]),
+        'summaries': (summariesIndexed[:TRAIN_SIZE],
+                      summariesIndexed[TRAIN_SIZE:TRAIN_SIZE+TEST_SIZE]),
+        'summariesWP': (summariesWP[:TRAIN_SIZE],
+                        summariesWP[TRAIN_SIZE:TRAIN_SIZE+TEST_SIZE]), # WordPrevalances
         'wordIndex': wordIndex
     }
 
