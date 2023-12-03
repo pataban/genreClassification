@@ -1,8 +1,3 @@
-import os
-# suppress warnings from tensorFlow
-# show only: {'0':info, '1':warning, '2':error, '3':fatal}
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-
 import nltk
 import json
 import string
@@ -103,24 +98,37 @@ def cleanSummaryManual(summary):
     return cSummary
 
 
-def cleanSummaries(summaries, verbose=False):
+def cleanSummaries(genres, summaries, verbose=False):
     if CLEAN_SUMMARY_MANUAL:
         summaries = list(map(lambda s: cleanSummaryManual(s)
                          [0:SUMMARY_LENGTH_MAX], summaries))
     else:
         summaries = list(map(lambda s: nltk.word_tokenize(s)
                          [0:SUMMARY_LENGTH_MAX], summaries))
+
+    tmpGenres = []
+    tmpSummaries = []
+    for g, s in zip(genres, summaries):
+        if len(s) >= SUMMARY_LENGTH_MIN:
+            tmpGenres.append(g)
+            tmpSummaries.append(s)
+    genres = tmpGenres
+    summaries = tmpSummaries
+
     if verbose > 1:
         print('\nwords:')
         printLen(summaries)
-    return summaries
+        print(f'\nlen(genres)={len(genres)}')
+    return (genres, summaries)
 
 
-def getWordIndex(summaries, verbose=False):    # TODO [DROP_TOP:KEEP_BOTTOM]
-    wordIndex = {word: 0 for word in chain.from_iterable(summaries)}
-    wordIndex = dict(zip(wordIndex.keys(), range(1, len(wordIndex)+1)))
+def getWordIndex(summaries, verbose=False):
+    wordIndex = countElements(chain.from_iterable(summaries))
+    wordIndex = wordIndex[WORDS_DROP_TOP:WORDS_KEEP_TOP]
+    wordIndex = list(map(lambda w: w[0], wordIndex))
+    wordIndex = dict(zip(wordIndex, range(1, len(wordIndex)+1)))
     if verbose > 1:
-        print('\nwordIndex:\n', wordIndex)
+        print(f'\nwordIndex(len={len(wordIndex)}):\n', wordIndex)
     return wordIndex
 
 
@@ -146,9 +154,10 @@ def cleanData(saveFileSuffix=None, verbose=0):
 
     books = loadRawData(verbose)
     genres, summaries = selectData(books, verbose=verbose)
+    genres, summaries = cleanSummaries(genres, summaries, verbose=verbose)
     genres = genres[:TRAIN_SIZE+TEST_SIZE]
     summaries = summaries[:TRAIN_SIZE+TEST_SIZE]
-    summaries = cleanSummaries(summaries, verbose=verbose)
+
     wordIndex = getWordIndex(summaries, verbose)
 
     shuffeledIndexes = tf.random.shuffle(
@@ -157,7 +166,7 @@ def cleanData(saveFileSuffix=None, verbose=0):
     genres = np.array(list(map(GENRE_INDEX.get, genres)))
     genres = tf.gather(genres, shuffeledIndexes).numpy()
     if verbose > 1:
-        print('\nfinal genres:\n', genres)
+        print(f'\nfinal genres(len={len(genres)}):\n', genres)
 
     summariesWP = np.array(list(map(
         lambda summary: calcPrevalance(summary, wordIndex), summaries)))
@@ -165,7 +174,7 @@ def cleanData(saveFileSuffix=None, verbose=0):
     summariesWP = scaler.transform(summariesWP)
     summariesWP = tf.gather(summariesWP, shuffeledIndexes).numpy()
     if verbose > 1:
-        print('\nfinal summariesWP:\n', summariesWP)
+        print(f'\nfinal summariesWP(len={len(summariesWP)}):\n', summariesWP)
 
     summariesIndexed = list(map(lambda summary: list(map(
         lambda word: wordIndex[word] if word in wordIndex else 0, summary)), summaries))
@@ -173,7 +182,8 @@ def cleanData(saveFileSuffix=None, verbose=0):
         summariesIndexed, padding='post', dtype=int, value=0)
     summariesIndexed = tf.gather(summariesIndexed, shuffeledIndexes).numpy()
     if verbose > 1:
-        print('\nfinal summariesIndexed:\n', summariesIndexed)
+        print(f'\nfinal summariesIndexed(len={len(summariesIndexed)}):\n',
+              summariesIndexed)
 
     booksData = {
         'genres': (genres[:TRAIN_SIZE],
@@ -181,7 +191,7 @@ def cleanData(saveFileSuffix=None, verbose=0):
         'summaries': (summariesIndexed[:TRAIN_SIZE],
                       summariesIndexed[TRAIN_SIZE:TRAIN_SIZE+TEST_SIZE]),
         'summariesWP': (summariesWP[:TRAIN_SIZE],
-                        summariesWP[TRAIN_SIZE:TRAIN_SIZE+TEST_SIZE]), # WordPrevalances
+                        summariesWP[TRAIN_SIZE:TRAIN_SIZE+TEST_SIZE]),  # WordPrevalances
         'wordIndex': wordIndex
     }
 
