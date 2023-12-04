@@ -32,5 +32,9 @@ if __name__ == "__main__":
         dl.classifyMLP(booksData['genres'], booksData['summariesWP'],
                        booksData['wordIndex'], verbose=3)
 
+    with Timer('CNN'):
+        dl.classifyCNN(booksData['genres'], booksData['summaries'],
+                        booksData['wordIndex'], booksData['embeddingMatrix'], verbose=1)
+
     print('\n--------------------------------------------------------------------------')
     Timer.prtTimes()

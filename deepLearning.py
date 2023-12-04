@@ -31,6 +31,37 @@ def buildMLP(inputShape):
     return model
 
 
+def buildCNN(vocabularySize, inputLength, embeddingMatrix):
+    embedding = keras.layers.Embedding(
+        vocabularySize, EMBEDDING_DIM, input_length=inputLength, mask_zero=True, trainable=False)
+    model = keras.models.Sequential([
+        embedding,
+        keras.layers.Conv1D(128, 3,
+            activation='relu', kernel_initializer='he_normal', bias_initializer='he_normal'),
+        keras.layers.MaxPooling1D(3),
+        keras.layers.Conv1D(128, 3,
+            activation='relu', kernel_initializer='he_normal', bias_initializer='he_normal'),
+        keras.layers.MaxPooling1D(3),
+        keras.layers.Conv1D(128, 3,
+            activation='relu', kernel_initializer='he_normal', bias_initializer='he_normal'),
+        keras.layers.MaxPooling1D(3),
+        keras.layers.Conv1D(128, 5,
+            activation='relu', kernel_initializer='he_normal', bias_initializer='he_normal'),
+        keras.layers.MaxPooling1D(3),
+        keras.layers.Conv1D(128, 3,
+            activation='relu', kernel_initializer='he_normal', bias_initializer='he_normal'),
+        keras.layers.GlobalMaxPooling1D(),
+        keras.layers.Dense(128,
+            activation='relu', kernel_initializer='he_normal', bias_initializer='he_normal'),
+        keras.layers.Dropout(0.3),
+        keras.layers.Dense(4, activation='softmax')
+    ])
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy',
+                  metrics="sparse_categorical_accuracy")
+    embedding.set_weights([embeddingMatrix])
+    return model
+
+
 def classify(modelName, genres, summaries, wordIndex, embeddingMatrix=None, verbose=0):
     print('\n--------------------------------------------------------------------------')
     print(modelName)
@@ -48,6 +79,8 @@ def classify(modelName, genres, summaries, wordIndex, embeddingMatrix=None, verb
         model = buildLSTM(vocabularySize, xTrain.shape[1], embeddingMatrix)
     elif modelName == 'MLP':
         model = buildMLP(xTrain.shape[1:])
+    elif modelName == 'CNN':
+        model = buildCNN(vocabularySize, xTrain.shape[1], embeddingMatrix)
     if 0 < verbose < 3:
         model.summary()
 
@@ -72,3 +105,8 @@ def classifyLSTM(genres, summaries, wordIndex, embeddingMatrix, verbose):
 
 def classifyMLP(genres, summaries, wordIndex, verbose):
     classify('MLP', genres, summaries, wordIndex, verbose=verbose)
+
+
+def classifyCNN(genres, summaries, wordIndex, embeddingMatrix, verbose):
+    classify('CNN', genres, summaries, wordIndex,
+             embeddingMatrix, verbose=verbose)
