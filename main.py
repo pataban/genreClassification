@@ -34,7 +34,10 @@ if __name__ == "__main__":
 
     with Timer('CNN'):
         dl.classifyCNN(booksData['genres'], booksData['summaries'],
-                        booksData['wordIndex'], booksData['embeddingMatrix'], verbose=1)
+                        booksData['wordIndex'], booksData['embeddingMatrix'], verbose=3)
+
+    with Timer('MNN'):
+        dl.classifyMNN(booksData, verbose=3)
 
     print('\n--------------------------------------------------------------------------')
     Timer.prtTimes()
