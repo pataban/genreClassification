@@ -14,28 +14,23 @@ from support import *
 if __name__ == "__main__":
     print('available GPU:', tf.config.list_physical_devices('GPU'))
 
-    start('dataLoad')
-    booksData = dp.cleanData(saveFileSuffix='', verbose=1)
-    stop('dataLoad')
-    # booksData = dp.loadData('')
-    # print('\n', booksData, '\n')
+    with Timer('dataLoad'):
+        booksData = dp.cleanData(saveFileSuffix='', verbose=1)
 
-    start('naiveBayes')
-    sl.classifyNB(booksData['genres'], booksData['summariesWP'], verbose=1)
-    stop('naiveBayes')
+    with Timer('naiveBayes'):
+        sl.classifyNB(booksData['genres'], booksData['summariesWP'], verbose=1)
 
-    start('SVM')
-    sl.classifySVM(booksData['genres'], booksData['summariesWP'], verbose=1)
-    stop('SVM')
+    with Timer('SVM'):
+        sl.classifySVM(booksData['genres'],
+                       booksData['summariesWP'], verbose=1)
 
-    start('LSTM')
-    dl.classifyLSTM(booksData['genres'], booksData['summaries'],
-                    booksData['wordIndex'], booksData['embeddingMatrix'], verbose=3)
-    stop('LSTM')
+    with Timer('LSTM'):
+        dl.classifyLSTM(booksData['genres'], booksData['summaries'],
+                        booksData['wordIndex'], booksData['embeddingMatrix'], verbose=3)
 
-    start('MLP')
-    dl.classifyMLP(booksData['genres'], booksData['summariesWP'], booksData['wordIndex'], verbose=3)
-    stop('MLP')
+    with Timer('MLP'):
+        dl.classifyMLP(booksData['genres'], booksData['summariesWP'],
+                       booksData['wordIndex'], verbose=3)
 
     print('\n--------------------------------------------------------------------------')
-    prtTimes()
+    Timer.prtTimes()

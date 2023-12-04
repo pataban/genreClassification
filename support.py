@@ -1,35 +1,31 @@
 import time
 
 
-# TODO wrap in class for safety
-# TODO start/stop using the 'with <item>:' context manager
+class Timer():
+    times = {}
 
+    def __init__(self, key):
+        self.key = key
+        self.start = None
+        if not self.key in Timer.times:
+            Timer.times[self.key] = 0.0
 
-times={}
+    def __enter__(self):
+        self.start = time.time()
+        return self
 
+    def __exit__(self, *args, **kwds):
+        Timer.times[self.key] += time.time()-self.start
 
-def start(key):
-    if not key in times:
-        times[key]=[0.0,0.0]
-    times[key][1]=time.time()
+    @staticmethod
+    def prtTimes():
+        times = list(Timer.times.items())
+        times.sort(key=lambda t: t[1], reverse=True)
 
+        times = list(map(lambda t: f'{t[0]} ='.ljust(15)+f'{t[1]:.4}\n', times))
+        print('times:')
+        print(''.join(times))
 
-def stop(key):
-    times[key][0]=time.time()-times[key][1]
-
-
-def prtTimes():
-    global times
-
-    times=list(map(lambda k,v:(k,v[0]),times.keys(),times.values()))
-    times.sort(key=lambda t:t[1],reverse=True)
-
-    convertTime=lambda t:f"{t[0]} =".ljust(15)+f" {int(round(t[1]*1000))/1000}\n"
-    times=list(map(convertTime,times))
-    print("times:")
-    print("".join(times))
-
-
-def clrTimes():
-    global times
-    times={}
+    @staticmethod
+    def clrTimes():
+        Timer.times = {}
