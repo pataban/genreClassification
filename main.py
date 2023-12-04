@@ -29,7 +29,8 @@ if __name__ == "__main__":
     stop('SVM')
 
     start('LSTM')
-    dl.classifyLSTM(booksData['genres'], booksData['summaries'], booksData['wordIndex'], verbose=3)
+    dl.classifyLSTM(booksData['genres'], booksData['summaries'],
+                    booksData['wordIndex'], booksData['embeddingMatrix'], verbose=3)
     stop('LSTM')
 
     start('MLP')

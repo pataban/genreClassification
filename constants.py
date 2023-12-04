@@ -11,6 +11,9 @@ GENRE_INDEX = bidict({'Science Fiction': 0, 'Fantasy': 1,'Mystery': 2, 'Crime Fi
 # 'Young adult literature': 5, 'Historical novel': 6, 'Speculative fiction': 7, 'Crime Fiction': 8, 'Non-fiction': 9})
 CLEAN_SUMMARY_MANUAL = False
 
+EMBEDDING_FILE_PATH = 'data/glove.6B.100d.txt'
+EMBEDDING_DIM = 100
+
 SUMMARY_LENGTH_MIN = 200
 SUMMARY_LENGTH_MAX = 1000
 WORDS_DROP_TOP = 10

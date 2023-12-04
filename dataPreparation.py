@@ -132,6 +132,24 @@ def getWordIndex(summaries, verbose=False):
     return wordIndex
 
 
+def loadEmbedingIndex():
+    embeddingsIndex = {}
+    with open(EMBEDDING_FILE_PATH, encoding='UTF-8') as file:
+        for line in file:
+            word, coefs = line.split(maxsplit=1)
+            coefs = np.fromstring(coefs, 'f', sep=' ')
+            embeddingsIndex[word] = coefs
+    return embeddingsIndex
+
+
+def getEmbeddingMatrix(wordIndex, embedingsIndex):
+    embeddingMatrix = np.zeros((max(wordIndex.values())+1, EMBEDDING_DIM))
+    for word, i in wordIndex.items():
+        if word in embedingsIndex:
+            embeddingMatrix[i] = embedingsIndex[word]
+    return embeddingMatrix
+
+
 def calcPrevalance(summary, wordIndex):
     mappedSummary = np.zeros((len(wordIndex)))
     for word in summary:
@@ -159,6 +177,8 @@ def cleanData(saveFileSuffix=None, verbose=0):
     summaries = summaries[:TRAIN_SIZE+TEST_SIZE]
 
     wordIndex = getWordIndex(summaries, verbose)
+    embedingIndex = loadEmbedingIndex()
+    embeddingMatrix = getEmbeddingMatrix(wordIndex, embedingIndex)
 
     shuffeledIndexes = tf.random.shuffle(
         tf.range(start=0, limit=len(genres), dtype=tf.int32))
@@ -192,7 +212,8 @@ def cleanData(saveFileSuffix=None, verbose=0):
                       summariesIndexed[TRAIN_SIZE:TRAIN_SIZE+TEST_SIZE]),
         'summariesWP': (summariesWP[:TRAIN_SIZE],
                         summariesWP[TRAIN_SIZE:TRAIN_SIZE+TEST_SIZE]),  # WordPrevalances
-        'wordIndex': wordIndex
+        'wordIndex': wordIndex,
+        'embeddingMatrix': embeddingMatrix
     }
 
     if saveFileSuffix is not None:

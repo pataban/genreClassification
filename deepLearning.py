@@ -4,15 +4,17 @@ from constants import *
 from dataPreparation import *
 
 
-def buildLSTM(vocabularySize, inputLength):
+def buildLSTM(vocabularySize, inputLength, embeddingMatrix):
+    embedding = keras.layers.Embedding(
+        vocabularySize, EMBEDDING_DIM, input_length=inputLength, mask_zero=True, trainable=False)
     model = keras.models.Sequential([
-        keras.layers.Embedding(
-            vocabularySize, 32, input_length=inputLength, mask_zero=True),
+        embedding,
         keras.layers.LSTM(32),
-        keras.layers.Dense(4, activation='softmax')])
-
+        keras.layers.Dense(4, activation='softmax')
+    ])
     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy',
                   metrics="sparse_categorical_accuracy")
+    embedding.set_weights([embeddingMatrix])
     return model
 
 
@@ -20,7 +22,7 @@ def buildMLP(inputShape):
     model = keras.models.Sequential([
         keras.layers.Dense(4096, input_shape=inputShape,
             activation='relu', kernel_initializer='he_normal', bias_initializer='he_normal'),
-            keras.layers.Dense(128, input_shape=inputShape,
+        keras.layers.Dense(128, input_shape=inputShape,
             activation='relu', kernel_initializer='he_normal', bias_initializer='he_normal'),
         keras.layers.Dense(4, activation='softmax')
     ])
@@ -29,7 +31,7 @@ def buildMLP(inputShape):
     return model
 
 
-def classify(modelName, genres, summaries, wordIndex, verbose):
+def classify(modelName, genres, summaries, wordIndex, embeddingMatrix=None, verbose=0):
     print('\n--------------------------------------------------------------------------')
     print(modelName)
     print('--------------------------------------------------------------------------')
@@ -42,10 +44,10 @@ def classify(modelName, genres, summaries, wordIndex, verbose):
         print('vocabulary size = ', vocabularySize)
         print('summaries.shape =', xTrain.shape)
 
-    if modelName =='LSTM':
-        model=buildLSTM(vocabularySize,xTrain.shape[1])
+    if modelName == 'LSTM':
+        model = buildLSTM(vocabularySize, xTrain.shape[1], embeddingMatrix)
     elif modelName == 'MLP':
-        model=buildMLP(xTrain.shape[1:])
+        model = buildMLP(xTrain.shape[1:])
     if 0 < verbose < 3:
         model.summary()
 
@@ -64,9 +66,9 @@ def classify(modelName, genres, summaries, wordIndex, verbose):
     print('accuracy: %.4f' % (res[1]))
 
 
-def classifyLSTM(genres, summaries, wordIndex, verbose):
-    classify('LSTM',genres, summaries, wordIndex, verbose)
+def classifyLSTM(genres, summaries, wordIndex, embeddingMatrix, verbose):
+    classify('LSTM', genres, summaries, wordIndex, embeddingMatrix, verbose)
 
 
 def classifyMLP(genres, summaries, wordIndex, verbose):
-    classify('MLP',genres, summaries, wordIndex, verbose)
+    classify('MLP', genres, summaries, wordIndex, verbose=verbose)
