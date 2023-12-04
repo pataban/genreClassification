@@ -5,6 +5,10 @@ from sklearn.metrics import accuracy_score
 from constants import *
 
 
+NB = 'naiveBayes'
+SVM = 'SVM'
+
+
 def buildNB():
     return GaussianNB()
 
@@ -14,18 +18,20 @@ def buildSVM():
                kernel='sigmoid', tol=0.0001, cache_size=4000)
 
 
-def classify(modelName, yData, xData, verbose):
+def classify(modelName, booksData, verbose=0):
     print('\n--------------------------------------------------------------------------')
     print(modelName)
     print('--------------------------------------------------------------------------')
 
-    xTrain, xTest = xData
-    yTrain, yTest = yData
+    xTrain, xTest = booksData['summariesWP']
+    yTrain, yTest = booksData['genres']
 
-    if modelName == 'naiveBayes':
+    if modelName == NB:
         model = buildNB()
-    elif modelName == 'SVM':
+    elif modelName == SVM:
         model = buildSVM()
+    else:
+        return
 
     if verbose > 0:
         print('training...')
@@ -37,11 +43,3 @@ def classify(modelName, yData, xData, verbose):
         print('predictedLabels:\n', predictedLabels)
 
     print('accuracy: %.4f' % (accuracy_score(yTest, predictedLabels)))
-
-
-def classifyNB(yData, xData, verbose):
-    classify('naiveBayes', yData, xData, verbose)
-
-
-def classifySVM(yData, xData, verbose):
-    classify('SVM', yData, xData, verbose)

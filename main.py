@@ -15,29 +15,25 @@ if __name__ == "__main__":
     print('available GPU:', tf.config.list_physical_devices('GPU'))
 
     with Timer('dataLoad'):
-        booksData = dp.cleanData(saveFileSuffix='', verbose=1)
+        booksData = dp.cleanData(verbose=1)
 
     with Timer('naiveBayes'):
-        sl.classifyNB(booksData['genres'], booksData['summariesWP'], verbose=1)
+        sl.classify(sl.NB, booksData, verbose=1)
 
     with Timer('SVM'):
-        sl.classifySVM(booksData['genres'],
-                       booksData['summariesWP'], verbose=1)
+        sl.classify(sl.SVM, booksData, verbose=1)
 
     with Timer('LSTM'):
-        dl.classifyLSTM(booksData['genres'], booksData['summaries'],
-                        booksData['wordIndex'], booksData['embeddingMatrix'], verbose=3)
+        dl.classify(dl.LSTM, booksData, verbose=3)
 
     with Timer('MLP'):
-        dl.classifyMLP(booksData['genres'], booksData['summariesWP'],
-                       booksData['wordIndex'], verbose=3)
+        dl.classify(dl.MLP, booksData, verbose=3)
 
     with Timer('CNN'):
-        dl.classifyCNN(booksData['genres'], booksData['summaries'],
-                        booksData['wordIndex'], booksData['embeddingMatrix'], verbose=3)
+        dl.classify(dl.CNN, booksData, verbose=3)
 
     with Timer('MNN'):
-        dl.classifyMNN(booksData, verbose=3)
+        dl.classify(dl.MNN, booksData, verbose=3)
 
     print('\n--------------------------------------------------------------------------')
     Timer.prtTimes()
