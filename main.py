@@ -15,7 +15,7 @@ if __name__ == "__main__":
     print('available GPU:', tf.config.list_physical_devices('GPU'))
 
     with Timer('dataLoad'):
-        booksData = dp.cleanData(verbose=1)
+        booksData = dp.cleanData('movies',verbose=1)
 
     with Timer('naiveBayes'):
         sl.classify(sl.NB, booksData, verbose=1)

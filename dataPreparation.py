@@ -12,13 +12,8 @@ from constants import *
 from support import *
 
 
-def loadData(dataType=''):
-    return pd.read_json(DATA_FIE_PATH + DATA_FILE_NAME + dataType + '.json')
-
-
-def loadRawData(verbose=False):
-    books = pd.read_csv(DATA_FIE_PATH + RAW_DATA_FILE_NAME +
-                        RAW_DATA_FILE_EXTENSION, sep='\t')
+def loadRawBooksData(verbose=False):
+    books = pd.read_csv(DATA_DIR_PATH + RAW_BOOKS_DATA_FILE_NAME, sep='\t')
     books.columns = ('wId', 'fId', 'title',
                      'author', 'date', 'genres', 'summary')
 
@@ -33,6 +28,22 @@ def loadRawData(verbose=False):
         print('\nraw data info:')
         books.info()
     return books
+
+
+def loadRawMoviesData(verbose=0):
+    movies=pd.concat([pd.read_csv(DATA_DIR_PATH + RAW_MOVIES_DATA_FILE_NAME[0],
+                          sep=' ::: ',header=None,engine='python'),
+                     pd.read_csv(DATA_DIR_PATH + RAW_MOVIES_DATA_FILE_NAME[1],
+                                 sep=' ::: ',header=None,engine='python')])
+
+    movies.columns = ('id', 'title', 'genre', 'summary')
+    movies = movies.drop(columns=['id', 'title']).dropna()
+
+    if verbose > 1:
+        print('raw data:\n', movies)
+        print('\nraw data info:')
+        movies.info()
+    return movies
 
 
 def printLen(summaries):
@@ -128,7 +139,8 @@ def getWordIndex(summaries, verbose=False):
     wordIndex = list(map(lambda w: w[0], wordIndex))
     wordIndex = dict(zip(wordIndex, range(1, len(wordIndex)+1)))
     if verbose > 1:
-        print(f'\nwordIndex(len={len(wordIndex)}):\n', wordIndex)
+        print(f'\nwordIndex(len={len(wordIndex)}):')
+        #print(wordIndex)
     return wordIndex
 
 
@@ -159,19 +171,21 @@ def calcPrevalance(summary, wordIndex):
     return mappedSummary
 
 
-def saveData(saveFileSuffix, booksData):
-    # books.to_json(DATA_FIE_PATH + DATA_FILE_NAME + saveFileSuffix + '.json')
-    pass
-
-
-def cleanData(saveFileSuffix=None, verbose=0):
+def cleanData(dType='books',verbose=0):
     if verbose > 0:
         print('--------------------------------------------------------------------------')
         print("CleanData")
         print('--------------------------------------------------------------------------')
 
-    books = loadRawData(verbose)
-    genres, summaries = selectData(books, verbose=verbose)
+    if dType=='books':
+        books = loadRawBooksData(verbose)
+        genres, summaries = selectData(books, verbose=verbose)
+    elif dType=='movies':
+        movies = loadRawMoviesData(verbose)
+        movies['genre']=movies['genre'].map(lambda g: g if g in GENRE_INDEX.keys() else None)
+        movies=movies.dropna()
+        genres=movies['genre']
+        summaries=movies['summary']
     genres, summaries = cleanSummaries(genres, summaries, verbose=verbose)
     genres = genres[:TRAIN_SIZE+TEST_SIZE]
     summaries = summaries[:TRAIN_SIZE+TEST_SIZE]
@@ -215,8 +229,5 @@ def cleanData(saveFileSuffix=None, verbose=0):
         'wordIndex': wordIndex,
         'embeddingMatrix': embeddingMatrix
     }
-
-    if saveFileSuffix is not None:
-        saveData(saveFileSuffix, booksData)
 
     return booksData
